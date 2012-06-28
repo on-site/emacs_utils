@@ -3,7 +3,14 @@
 This is a collection of various emacs lisp files that you can include
 to make various things easier.
 
-# new-shell.el
+## load-all.el
+
+Loads everything in this repo, so you can just add the following line
+in your .emacs file to load everything:
+
+    (load "~/path/to/emacs_utils_clone/load-all.el")
+
+## new-shell.el
 
 Adds a simple function sh, which can be used via "M-x sh" to launch a
 new shell.  It differs from "M-x shell" by prompting you for which
@@ -11,7 +18,7 @@ buffer you want to launch the shell in, and then creates the new
 buffer to launch the shell in (rather than opening an existing shell
 if one exists).
 
-# rails-nav.el
+## rails-nav.el
 
 Adds a bunch of rails navigation functions inspired by similar
 utilities in some VIM plugins.
