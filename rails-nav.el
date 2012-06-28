@@ -20,13 +20,24 @@
 
 (defun get-rails-item (&optional file-name-or-current)
   "Get the rails item from the given file name or current buffer file name"
-  (let ((file-name (or file-name-or-current (buffer-file-name) (file-truename "."))))
-    (cond ((is-rails-controller file-name) (string-inside file-name (get-rails-path "app/controllers/") "_controller.rb"))
+  (let ((file-name (or file-name-or-current (buffer-file-name) (file-truename ".")))
+        (using-current-buffer (not file-name-or-current)))
+    (cond ((is-rails-controller file-name) (concat (string-inside file-name (get-rails-path "app/controllers/") "_controller.rb") (get-rails-controller-action using-current-buffer)))
           ((is-rails-helper file-name) (string-inside file-name (get-rails-path "app/helpers/") "_helper.rb"))
           ((is-rails-model file-name) (string-inside file-name (get-rails-path "app/models/") ".rb"))
           ((is-rails-view file-name) (concat (string-inside file-name (get-rails-path "app/views/") (concat "/" (file-name-nondirectory file-name)))
-                                             "#" (nth 0 (split-string (file-name-nondirectory file-name) "\\."))))
+                                             (get-rails-view-action file-name)))
           (t "application"))))
+
+(defun get-rails-controller-action (detect)
+  "Try to detect an action from the current buffer, return with leading #, but only if detect is true"
+  (if detect
+      (let ((result (save-excursion (if (re-search-backward "def\\s-+\\([a-zA-Z_]+\\)" nil t) (match-string 1)))))
+        (if result (concat "#" result)))))
+
+(defun get-rails-view-action (file-name)
+  "Get the rails action from the given view file (including a leading #)"
+  (concat "#" (nth 0 (split-string (file-name-nondirectory file-name) "\\."))))
 
 (defun is-rails-controller (file-name)
   "Determine if the given file-name is a rails controller"
