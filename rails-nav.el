@@ -10,13 +10,15 @@
 (def-jump-to-rails "controller")
 (def-jump-to-rails "helper")
 (def-jump-to-rails "model")
+(def-jump-to-rails "spec")
+(def-jump-to-rails "test")
 (def-jump-to-rails "view")
 
 (defun jump-to-rails-item (type)
   "Jump to the rails item for the given type based on the current file"
-  (let ((default-item (get-rails-item)))
-    (let ((item (read-rails-item type default-item)))
-      (find-file (get-rails-full-item-path type (if (equal item "") default-item item))))))
+  (let* ((default-item (get-rails-item))
+         (item (read-rails-item type default-item)))
+    (find-file (get-rails-full-item-path type (if (equal item "") default-item item)))))
 
 (defun read-rails-item (type default-item)
   "Read a rails item of the given type with tab completion"
@@ -33,6 +35,12 @@
         ((equal type "model") (mapcar
                                (lambda (x) (chomp-ends-with x ".rb"))
                                (rails-directory-files "app/models" ".*\\.rb$")))
+        ((equal type "spec") (mapcar
+                              (lambda (x) (chomp-ends-with x "_spec.rb"))
+                              (rails-directory-files "spec" ".*_spec\\.rb$")))
+        ((equal type "test") (mapcar
+                              (lambda (x) (chomp-ends-with x "_test.rb"))
+                              (rails-directory-files "test" ".*_test\\.rb$")))
         ((equal type "view") (mapcar
                               (lambda (x)
                                 (replace-regexp-in-string "^\\(.+\\)/\\(.+?\\)\\.html\\.erb$" "\\1#\\2" x))
@@ -58,7 +66,7 @@
               (directory-files path-dir nil nil t))))
 
 ;; From http://stackoverflow.com/questions/969067/name-of-this-function-in-built-in-emacs-lisp-library
-(defun flatten(x)
+(defun flatten (x)
   "Flatten a list, so all sub-list items become simple items in the array, so ((1 2) 3 (4 5)) becomes (1 2 3 4 5)"
   (cond ((null x) nil)
         ((listp x) (append (flatten (car x)) (flatten (cdr x))))
@@ -79,6 +87,8 @@
     (cond ((is-rails-controller file-name) (concat (string-inside file-name (get-rails-path "app/controllers/") "_controller.rb") (get-rails-controller-action using-current-buffer)))
           ((is-rails-helper file-name) (string-inside file-name (get-rails-path "app/helpers/") "_helper.rb"))
           ((is-rails-model file-name) (string-inside file-name (get-rails-path "app/models/") ".rb"))
+          ((is-rails-spec file-name) (string-inside file-name (get-rails-path "spec/") "_spec.rb"))
+          ((is-rails-test file-name) (string-inside file-name (get-rails-path "test/") "_test.rb"))
           ((is-rails-view file-name) (concat (string-inside file-name (get-rails-path "app/views/") (concat "/" (file-name-nondirectory file-name)))
                                              (get-rails-view-action file-name)))
           (t "application"))))
@@ -105,26 +115,36 @@
   "Determine if the given file-name is a rails model"
   (has-parent-directory file-name (get-rails-path "app/models")))
 
+(defun is-rails-spec (file-name)
+  "Determine if the given file-name is a rails spec"
+  (has-parent-directory file-name (get-rails-path "spec")))
+
+(defun is-rails-test (file-name)
+  "Determine if the given file-name is a rails test"
+  (has-parent-directory file-name (get-rails-path "test")))
+
 (defun is-rails-view (file-name)
   "Determine if the given file-name is a rails view"
   (has-parent-directory file-name (get-rails-path "app/views")))
 
 (defun get-rails-full-item-path (type full-item)
   "Get an item path relative to the current rails root"
-  (let ((item (nth 0 (split-rails-item full-item)))
-        (maybe-action (nth 1 (split-rails-item full-item))))
-    (let ((action (or maybe-action "index")))
-      (let ((non-toggled-path (get-rails-item-path type item action))
-            (toggled-path (get-rails-item-path type (toggle-plural item) action)))
-        (if (and (not (file-exists-p non-toggled-path)) (file-exists-p toggled-path))
-            toggled-path
-          non-toggled-path)))))
+  (let* ((item (nth 0 (split-rails-item full-item)))
+         (maybe-action (nth 1 (split-rails-item full-item)))
+         (action (or maybe-action "index"))
+         (non-toggled-path (get-rails-item-path type item action))
+         (toggled-path (get-rails-item-path type (toggle-plural item) action)))
+    (if (and (not (file-exists-p non-toggled-path)) (file-exists-p toggled-path))
+        toggled-path
+      non-toggled-path)))
 
 (defun get-rails-item-path (type item action)
   "Get a rails item path from the item and action"
   (cond ((equal type "controller") (get-rails-path (concat "app/controllers/" item "_controller.rb")))
         ((equal type "helper") (get-rails-path (concat "app/helpers/" item "_helper.rb")))
         ((equal type "model") (get-rails-path (concat "app/models/" item ".rb")))
+        ((equal type "spec") (get-rails-path (concat "spec/" item "_spec.rb")))
+        ((equal type "test") (get-rails-path (concat "test/" item "_test.rb")))
         ((equal type "view") (get-rails-path (concat "app/views/" item "/" action ".html.erb")))))
 
 (defun toggle-plural (item)
@@ -144,11 +164,11 @@
 
 (defun get-rails-root (&optional path-or-current)
   "Find rails root from the current or given directory, or nil if it is not detected, and fall back to default-rails-root global variable as possible Rails location"
-  (let ((path (or path-or-current ".")))
-    (let ((from-path (locate-rails-root path)))
-      (if from-path
-          from-path
-        (if (boundp 'default-rails-root) (locate-rails-root default-rails-root))))))
+  (let* ((path (or path-or-current "."))
+         (from-path (locate-rails-root path)))
+    (if from-path
+        from-path
+      (if (boundp 'default-rails-root) (locate-rails-root default-rails-root)))))
 
 (defun locate-rails-root (path)
   "Find rails root relative to the given directory, or nil if it is not detected"
@@ -201,4 +221,6 @@
 (set-rails-key "\C-xjc" 'jump-to-rails-controller)
 (set-rails-key "\C-xjh" 'jump-to-rails-helper)
 (set-rails-key "\C-xjm" 'jump-to-rails-model)
+(set-rails-key "\C-xjs" 'jump-to-rails-spec)
+(set-rails-key "\C-xjt" 'jump-to-rails-test)
 (set-rails-key "\C-xjv" 'jump-to-rails-view)
