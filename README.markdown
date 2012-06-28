@@ -35,6 +35,10 @@ in an action corresponding to a view.  Similarly, you will be placed
 in the appropriate action of a controller if you are in a specific
 view.
 
+If the file trying to be found doesn't exist, the name will be toggled
+from plural vs not plural and tried again.  Odd inflections like
+person/people is not currently supported.
+
 Use the following bindings to jump to the corresponding type:
 
 * **C-x j c**: Controllers

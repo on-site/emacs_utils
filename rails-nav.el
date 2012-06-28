@@ -15,8 +15,8 @@
 (defun jump-to-rails-item (type)
   "Jump to the rails item for the given type based on the current file"
   (let ((default-item (get-rails-item)))
-    (let ((item (read-string (concat "Rails item to load (default " default-item "): "))))
-      (find-file (get-rails-item-path type (if (equal item "") default-item item))))))
+    (let ((item (read-string (concat "Rails " type " to load (default " default-item "): "))))
+      (find-file (get-rails-full-item-path type (if (equal item "") default-item item))))))
 
 (defun get-rails-item (&optional file-name-or-current)
   "Get the rails item from the given file name or current buffer file name"
@@ -55,15 +55,30 @@
   "Determine if the given file-name is a rails view"
   (has-parent-directory file-name (get-rails-path "app/views")))
 
-(defun get-rails-item-path (type full-item)
+(defun get-rails-full-item-path (type full-item)
   "Get an item path relative to the current rails root"
   (let ((item (nth 0 (split-rails-item full-item)))
         (maybe-action (nth 1 (split-rails-item full-item))))
     (let ((action (or maybe-action "index")))
-      (cond ((equal type "controller") (get-rails-path (concat "app/controllers/" item "_controller.rb")))
-            ((equal type "helper") (get-rails-path (concat "app/helpers/" item "_helper.rb")))
-            ((equal type "model") (get-rails-path (concat "app/models/" item ".rb")))
-            ((equal type "view") (get-rails-path (concat "app/views/" item "/" action ".html.erb")))))))
+      (let ((non-toggled-path (get-rails-item-path type item action))
+            (toggled-path (get-rails-item-path type (toggle-plural item) action)))
+        (if (and (not (file-exists-p non-toggled-path)) (file-exists-p toggled-path))
+            toggled-path
+          non-toggled-path)))))
+
+(defun get-rails-item-path (type item action)
+  "Get a rails item path from the item and action"
+  (cond ((equal type "controller") (get-rails-path (concat "app/controllers/" item "_controller.rb")))
+        ((equal type "helper") (get-rails-path (concat "app/helpers/" item "_helper.rb")))
+        ((equal type "model") (get-rails-path (concat "app/models/" item ".rb")))
+        ((equal type "view") (get-rails-path (concat "app/views/" item "/" action ".html.erb")))))
+
+(defun toggle-plural (item)
+  "Toggle the plural state of the given item"
+  (let ((chomped (chomp-ends-with item "s")))
+    (if chomped
+        chomped
+      (concat item "s"))))
 
 (defun split-rails-item (full-item)
   "Split a rails item like 'account#index' into '('acount' 'index')"
