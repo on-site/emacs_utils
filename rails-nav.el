@@ -63,21 +63,25 @@
   (concat (get-rails-root) path))
 
 (defun get-rails-root (&optional path-or-current)
-  "Find rails root from the current or given directory, or nil if it is not detected"
+  "Find rails root from the current or given directory, or nil if it is not detected, and fall back to default-rails-root global variable as possible Rails location"
   (let ((path (or path-or-current ".")))
-    (let ((path-dir (file-name-as-directory path)))
-      (cond ((is-rails-root path-dir) (file-truename path-dir))
-            ((equal (file-truename path-dir) "/") nil)
-            (t (get-rails-root (concat path-dir "..")))))))
+    (let ((from-path (locate-rails-root path)))
+      (if from-path
+          from-path
+        (if (boundp 'default-rails-root) (locate-rails-root default-rails-root))))))
+
+(defun locate-rails-root (path)
+  "Find rails root relative to the given directory, or nil if it is not detected"
+  (if path
+      (let ((path-dir (file-name-as-directory path)))
+        (cond ((is-rails-root path-dir) (file-truename path-dir))
+              ((equal (file-truename path-dir) "/") nil)
+              (t (get-rails-root (concat path-dir "..")))))))
 
 (defun is-rails-root (path)
   "Determine if a given path is a rails root"
   (let ((path-dir (file-name-as-directory path)))
-    (and (file-directory-p (concat path-dir "app"))
-         (file-directory-p (concat path-dir "app/controllers"))
-         (file-directory-p (concat path-dir "app/helpers"))
-         (file-directory-p (concat path-dir "app/models"))
-         (file-directory-p (concat path-dir "app/views")))))
+    (file-exists-p (concat path-dir "script/rails"))))
 
 (defun has-parent-directory (testing against)
   "Determine if the first argument has the parent directory being the against argument"
