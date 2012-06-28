@@ -156,12 +156,14 @@
       (let ((path-dir (file-name-as-directory path)))
         (cond ((is-rails-root path-dir) (file-truename path-dir))
               ((equal (file-truename path-dir) "/") nil)
-              (t (get-rails-root (concat path-dir "..")))))))
+              (t (locate-rails-root (concat path-dir "..")))))))
 
 (defun is-rails-root (path)
   "Determine if a given path is a rails root"
   (let ((path-dir (file-name-as-directory path)))
-    (file-exists-p (concat path-dir "script/rails"))))
+    (or (file-exists-p (concat path-dir "script/rails"))
+        (and (file-exists-p (concat path-dir "script/server"))
+             (file-directory-p (concat path-dir "app"))))))
 
 (defun has-parent-directory (testing against)
   "Determine if the first argument has the parent directory being the against argument"
