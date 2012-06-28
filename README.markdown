@@ -51,6 +51,9 @@ default-rails-root global variable in your .emacs file:
 
     (setq default-rails-root "~/path/to/my/rails/root")
 
+Note that you can tab complete for all possible values of the various
+types.
+
 # License
 
 These utility scripts are licensed under the [MIT license](http://github.com/on-site/emacs_utils/blob/master/MIT-LICENSE.txt)

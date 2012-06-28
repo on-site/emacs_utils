@@ -15,8 +15,62 @@
 (defun jump-to-rails-item (type)
   "Jump to the rails item for the given type based on the current file"
   (let ((default-item (get-rails-item)))
-    (let ((item (read-string (concat "Rails " type " to load (default " default-item "): "))))
+    (let ((item (read-rails-item type default-item)))
       (find-file (get-rails-full-item-path type (if (equal item "") default-item item))))))
+
+(defun read-rails-item (type default-item)
+  "Read a rails item of the given type with tab completion"
+  (completing-read (concat "Rails " type " to load (default " default-item "): ") (retrieve-rails-items type) nil 'confirm))
+
+(defun retrieve-rails-items (type)
+  "Retrieve the rails items for the given type"
+  (cond ((equal type "controller") (mapcar
+                                    (lambda (x) (chomp-ends-with x "_controller.rb"))
+                                    (rails-directory-files "app/controllers" ".*_controller\\.rb$")))
+        ((equal type "helper") (mapcar
+                                (lambda (x) (chomp-ends-with x "_helper.rb"))
+                                (rails-directory-files "app/helpers" ".*_helper\\.rb$")))
+        ((equal type "model") (mapcar
+                               (lambda (x) (chomp-ends-with x ".rb"))
+                               (rails-directory-files "app/models" ".*\\.rb$")))
+        ((equal type "view") (mapcar
+                              (lambda (x)
+                                (replace-regexp-in-string "^\\(.+\\)/\\(.+?\\)\\.html\\.erb$" "\\1#\\2" x))
+                              (rails-directory-files "app/views" ".+/.+?\\.html\\.erb$")))))
+
+(defun rails-directory-files (path regex)
+  "Like a recursive version of directory-files, but for rails directories"
+  (compact (mapcar
+            (lambda (x)
+              (if (and x (string-match regex x)) x))
+            (flatten (rails-directory-expand-files "" (get-rails-path path))))))
+
+(defun rails-directory-expand-files (prefix path)
+  "Recursive helper function for rails-directory-files"
+  (let ((path-dir (file-name-as-directory path)))
+    (mapcar (lambda (x)
+              (if (or (equal x ".") (equal x ".."))
+                  nil
+                (let ((path-x (concat path-dir x)))
+                  (if (file-directory-p path-x)
+                      (rails-directory-expand-files (file-name-as-directory (concat prefix x)) path-x)
+                    (concat prefix x)))))
+              (directory-files path-dir nil nil t))))
+
+;; From http://stackoverflow.com/questions/969067/name-of-this-function-in-built-in-emacs-lisp-library
+(defun flatten(x)
+  "Flatten a list, so all sub-list items become simple items in the array, so ((1 2) 3 (4 5)) becomes (1 2 3 4 5)"
+  (cond ((null x) nil)
+        ((listp x) (append (flatten (car x)) (flatten (cdr x))))
+        (t (list x))))
+
+;; From http://stackoverflow.com/questions/3967320/lisp-function-to-remove-nils
+(defun compact (x)
+  "Compact a list, so all nils are removed, so (nil 1 2 3 nil 4) becomes (1 2 3 4)"
+  (if (listp x)
+      (mapcar #'compact
+              (remove nil x))
+    x))
 
 (defun get-rails-item (&optional file-name-or-current)
   "Get the rails item from the given file name or current buffer file name"
