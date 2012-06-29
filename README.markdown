@@ -3,6 +3,23 @@
 This is a collection of various emacs lisp files that you can include
 to make various things easier.
 
+## edit-utils.el
+
+This adds some utility functions to make editing easier.
+
+The function change-inside (bound to **C-x c i**) will allow you to
+change things inside a particular string or character.  It will handle
+parenthesis, braces and brackets as expected (you can type either a
+starting or ending one), and it handles any arbitrary character or
+string.  The results are saved in your kill ring.
+
+If you are going to delete more than 200 characters, you will be
+prompted if you are sure you want to do it (just press y or n to
+confirm or cancel).  This maximum can be changed by setting the
+max-change-inside-without-prompt like:
+
+    (setq max-change-inside-without-prompt 500)
+
 ## load-all.el
 
 Loads everything in this repo, so you can just add the following line
