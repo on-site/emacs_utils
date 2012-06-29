@@ -20,6 +20,9 @@ max-change-inside-without-prompt like:
 
     (setq max-change-inside-without-prompt 500)
 
+Similar to change-inside is grab-inside (bound to **C-x g i**), which
+will grab what is inside the given string, but it will not be deleted.
+
 ## load-all.el
 
 Loads everything in this repo, so you can just add the following line
