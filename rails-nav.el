@@ -1,50 +1,38 @@
-(defmacro def-jump-to-rails (type)
+(defmacro def-jump-to-rails (type retrieve-files)
   "Simplify defining the jump-to rails functions"
   `(defun ,(intern (concat "jump-to-rails-" type)) ()
      ,(concat "Get the correct rails " type " for the current file")
      (interactive)
      (if (get-rails-root)
-         (jump-to-rails-item ,type)
+         (let* ((default-item (get-rails-item))
+                (item (completing-read (concat "Rails " ,type " to load (default " default-item "): ") ,retrieve-files nil 'confirm)))
+           (find-file (get-rails-full-item-path ,type (if (equal item "") default-item item))))
        (message "Cannot find rails root!"))))
 
-(def-jump-to-rails "controller")
-(def-jump-to-rails "helper")
-(def-jump-to-rails "model")
-(def-jump-to-rails "spec")
-(def-jump-to-rails "test")
-(def-jump-to-rails "view")
-
-(defun jump-to-rails-item (type)
-  "Jump to the rails item for the given type based on the current file"
-  (let* ((default-item (get-rails-item))
-         (item (read-rails-item type default-item)))
-    (find-file (get-rails-full-item-path type (if (equal item "") default-item item)))))
-
-(defun read-rails-item (type default-item)
-  "Read a rails item of the given type with tab completion"
-  (completing-read (concat "Rails " type " to load (default " default-item "): ") (retrieve-rails-items type) nil 'confirm))
-
-(defun retrieve-rails-items (type)
-  "Retrieve the rails items for the given type"
-  (cond ((equal type "controller") (mapcar
-                                    (lambda (x) (chomp-ends-with x "_controller.rb"))
-                                    (rails-directory-files "app/controllers" ".*_controller\\.rb$")))
-        ((equal type "helper") (mapcar
-                                (lambda (x) (chomp-ends-with x "_helper.rb"))
-                                (rails-directory-files "app/helpers" ".*_helper\\.rb$")))
-        ((equal type "model") (mapcar
-                               (lambda (x) (chomp-ends-with x ".rb"))
-                               (rails-directory-files "app/models" ".*\\.rb$")))
-        ((equal type "spec") (mapcar
-                              (lambda (x) (chomp-ends-with x "_spec.rb"))
-                              (rails-directory-files "spec" ".*_spec\\.rb$")))
-        ((equal type "test") (mapcar
-                              (lambda (x) (chomp-ends-with x "_test.rb"))
-                              (rails-directory-files "test" ".*_test\\.rb$")))
-        ((equal type "view") (mapcar
-                              (lambda (x)
-                                (replace-regexp-in-string "^\\(.+\\)/\\(.+?\\)\\.html\\.erb$" "\\1#\\2" x))
-                              (rails-directory-files "app/views" ".+/.+?\\.html\\.erb$")))))
+(def-jump-to-rails "controller"
+  (mapcar
+   (lambda (x) (chomp-ends-with x "_controller.rb"))
+   (rails-directory-files "app/controllers" ".*_controller\\.rb$")))
+(def-jump-to-rails "helper"
+  (mapcar
+   (lambda (x) (chomp-ends-with x "_helper.rb"))
+   (rails-directory-files "app/helpers" ".*_helper\\.rb$")))
+(def-jump-to-rails "model"
+  (mapcar
+   (lambda (x) (chomp-ends-with x ".rb"))
+   (rails-directory-files "app/models" ".*\\.rb$")))
+(def-jump-to-rails "spec"
+  (mapcar
+   (lambda (x) (chomp-ends-with x "_spec.rb"))
+   (rails-directory-files "spec" ".*_spec\\.rb$")))
+(def-jump-to-rails "test"
+  (mapcar
+   (lambda (x) (chomp-ends-with x "_test.rb"))
+   (rails-directory-files "test" ".*_test\\.rb$")))
+(def-jump-to-rails "view"
+  (mapcar
+   (lambda (x) (replace-regexp-in-string "^\\(.+\\)/\\(.+?\\)\\.html\\.erb$" "\\1#\\2" x))
+   (rails-directory-files "app/views" ".+/.+?\\.html\\.erb$")))
 
 (defun rails-directory-files (path regex)
   "Like a recursive version of directory-files, but for rails directories"
