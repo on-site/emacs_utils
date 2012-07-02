@@ -38,6 +38,11 @@
         (or (equal ?y answer) (equal ?Y answer)))
     t))
 
+(defun set-change-key (binding fn)
+  "Set the change key binding as given"
+  (global-unset-key binding)
+  (global-set-key binding fn))
+
 (setq max-change-inside-without-prompt 200)
-(set-rails-key "\C-xci" 'change-inside)
-(set-rails-key "\C-xgi" 'grab-inside)
+(set-change-key "\C-xci" 'change-inside)
+(set-change-key "\C-xgi" 'grab-inside)
