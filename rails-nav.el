@@ -1,13 +1,24 @@
-(defmacro def-jump-to-rails (type retrieve-files)
-  "Simplify defining the jump-to rails functions"
-  `(defun ,(intern (concat "jump-to-rails-" type)) ()
-     ,(concat "Get the correct rails " type " for the current file")
+(defmacro def-jump-to-file (fn-name help root-dir current-item retrieve-files-message retrieve-files load-file)
+  "Define a function to jump to a particular file based on a root directory function, a way to retrieve current context, a way to load known files, and how to load that specific file"
+  `(defun ,fn-name ()
+     ,help
      (interactive)
-     (if (get-rails-root)
-         (let* ((default-item (get-rails-item))
-                (item (completing-read (concat "Rails " ,type " to load (default " default-item "): ") ,retrieve-files nil 'confirm)))
-           (find-file (get-rails-full-item-path ,type (if (equal item "") default-item item))))
+     (if ,root-dir
+         (let* ((default-item ,current-item)
+                (item (completing-read (concat ,retrieve-files-message " (default " default-item "): ") ,retrieve-files nil 'confirm)))
+           (find-file (funcall ,load-file (if (equal item "") default-item item))))
        (message "Cannot find rails root!"))))
+
+(defmacro def-jump-to-rails (type retrieve-files)
+  "Define a jump-to-rails- function to jump to a particular rails file"
+  `(def-jump-to-file
+     ,(intern (concat "jump-to-rails-" type))
+     (concat "Get the correct rails " ,type " for the current file")
+     (get-rails-root)
+     (get-rails-item)
+     (concat "Rails " ,type " to load")
+     ,retrieve-files
+     (lambda (x) (get-rails-full-item-path ,type x))))
 
 (def-jump-to-rails "controller"
   (mapcar
