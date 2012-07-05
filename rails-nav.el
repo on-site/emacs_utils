@@ -1,18 +1,22 @@
-(defmacro def-jump-to-file (fn-name help root-dir current-item retrieve-files-message retrieve-files load-file)
+(defmacro def-jump-to-file (binding fn-name help root-dir current-item retrieve-files-message retrieve-files load-file)
   "Define a function to jump to a particular file based on a root directory function, a way to retrieve current context, a way to load known files, and how to load that specific file"
-  `(defun ,fn-name ()
-     ,help
-     (interactive)
-     (if ,root-dir
-         (let* ((default-item ,current-item)
-                (item (completing-read (concat ,retrieve-files-message " (default " default-item "): ") ,retrieve-files nil 'confirm)))
-           (find-file (funcall ,load-file (if (equal item "") default-item item))))
-       (message "Cannot find rails root!"))))
+  `(progn
+     (defun ,(intern fn-name) ()
+       ,help
+       (interactive)
+       (if ,root-dir
+           (let* ((default-item ,current-item)
+                  (item (completing-read (concat ,retrieve-files-message " (default " default-item "): ") ,retrieve-files nil 'confirm)))
+             (find-file (funcall ,load-file (if (equal item "") default-item item))))
+         (message "Cannot find rails root!")))
+     (global-unset-key ,binding)
+     (global-set-key ,binding (intern ,fn-name))))
 
-(defmacro def-jump-to-rails (type retrieve-files)
+(defmacro def-jump-to-rails (binding type retrieve-files)
   "Define a jump-to-rails- function to jump to a particular rails file"
   `(def-jump-to-file
-     ,(intern (concat "jump-to-rails-" type))
+     ,binding
+     ,(concat "jump-to-rails-" type)
      (concat "Get the correct rails " ,type " for the current file")
      (get-rails-root)
      (get-rails-item)
@@ -20,27 +24,27 @@
      ,retrieve-files
      (lambda (x) (get-rails-full-item-path ,type x))))
 
-(def-jump-to-rails "controller"
+(def-jump-to-rails "\C-xjc" "controller"
   (mapcar
    (lambda (x) (chomp-ends-with x "_controller.rb"))
    (rails-directory-files "app/controllers" ".*_controller\\.rb$")))
-(def-jump-to-rails "helper"
+(def-jump-to-rails "\C-xjh" "helper"
   (mapcar
    (lambda (x) (chomp-ends-with x "_helper.rb"))
    (rails-directory-files "app/helpers" ".*_helper\\.rb$")))
-(def-jump-to-rails "model"
+(def-jump-to-rails "\C-xjm" "model"
   (mapcar
    (lambda (x) (chomp-ends-with x ".rb"))
    (rails-directory-files "app/models" ".*\\.rb$")))
-(def-jump-to-rails "spec"
+(def-jump-to-rails "\C-xjs" "spec"
   (mapcar
    (lambda (x) (chomp-ends-with x "_spec.rb"))
    (rails-directory-files "spec" ".*_spec\\.rb$")))
-(def-jump-to-rails "test"
+(def-jump-to-rails "\C-xjt" "test"
   (mapcar
    (lambda (x) (chomp-ends-with x "_test.rb"))
    (rails-directory-files "test" ".*_test\\.rb$")))
-(def-jump-to-rails "view"
+(def-jump-to-rails "\C-xjv" "view"
   (mapcar
    (lambda (x) (replace-regexp-in-string "^\\(.+\\)/\\(.+?\\)\\.html\\.erb$" "\\1#\\2" x))
    (rails-directory-files "app/views" ".+/.+?\\.html\\.erb$")))
@@ -211,15 +215,3 @@
                 (equal value (substring string endlength)))
            (substring string 0 endlength))
           (t nil))))
-
-(defun set-rails-key (binding fn)
-  "Set the rails key binding as given"
-  (global-unset-key binding)
-  (global-set-key binding fn))
-
-(set-rails-key "\C-xjc" 'jump-to-rails-controller)
-(set-rails-key "\C-xjh" 'jump-to-rails-helper)
-(set-rails-key "\C-xjm" 'jump-to-rails-model)
-(set-rails-key "\C-xjs" 'jump-to-rails-spec)
-(set-rails-key "\C-xjt" 'jump-to-rails-test)
-(set-rails-key "\C-xjv" 'jump-to-rails-view)
