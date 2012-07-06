@@ -51,28 +51,35 @@
 
 (defun rails-directory-files (path regex)
   "Like a recursive version of directory-files, but for rails directories"
+  (recursive-directory-files 'get-rails-path path regex))
+
+(defun recursive-directory-files (root-fn path regex &optional max-depth)
+  "Like a recursive version of directory-files, but use a function to determine the base path"
   (compact (mapcar
             (lambda (x)
               (if (and x (string-match regex x)) x))
-            (flatten (rails-directory-expand-files "" (get-rails-path path))))))
+            (flatten (recursive-directory-expand-files "" (funcall root-fn path) max-depth)))))
 
-(defun rails-directory-expand-files (prefix path)
-  "Recursive helper function for rails-directory-files"
+(defun recursive-directory-expand-files (prefix path max-depth)
+  "Recursive helper function for recursive-directory-files"
   (let ((path-dir (file-name-as-directory path)))
     (mapcar (lambda (x)
               (if (or (equal x ".") (equal x ".."))
                   nil
                 (let ((path-x (concat path-dir x)))
                   (if (file-directory-p path-x)
-                      (rails-directory-expand-files (file-name-as-directory (concat prefix x)) path-x)
+                      (if (or (not max-depth) (> max-depth 0))
+                          (recursive-directory-expand-files (file-name-as-directory (concat prefix x)) path-x (if max-depth (- max-depth 1))))
                     (concat prefix x)))))
-              (directory-files path-dir nil nil t))))
+            (directory-files path-dir nil nil t))))
 
-;; From http://stackoverflow.com/questions/969067/name-of-this-function-in-built-in-emacs-lisp-library
+;; Adapted from http://stackoverflow.com/questions/969067/name-of-this-function-in-built-in-emacs-lisp-library
 (defun flatten (x)
   "Flatten a list, so all sub-list items become simple items in the array, so ((1 2) 3 (4 5)) becomes (1 2 3 4 5)"
   (cond ((null x) nil)
-        ((listp x) (append (flatten (car x)) (flatten (cdr x))))
+        ((listp x) (let (value)
+                     (dolist (elt x value)
+                       (setq value (append value (flatten elt))))))
         (t (list x))))
 
 ;; From http://stackoverflow.com/questions/3967320/lisp-function-to-remove-nils
