@@ -44,16 +44,10 @@
   "Get the length from the current buffer"
   (let* ((open-type (car type-pair))
          (close-type (cadr type-pair))
-         (heterogeneous (not (equal open-type close-type)))
          (open-backward-position (save-excursion (search-backward open-type nil t)))
-         (close-backward-position (if heterogeneous (save-excursion (search-backward close-type nil t))))
-         (open-forward-position (if heterogeneous (save-excursion (search-forward open-type nil t))))
          (close-forward-position (save-excursion (search-forward close-type nil t))))
-    (if (or (not close-backward-position)
-            (> open-backward-position close-backward-position))
-        (if (or (not open-forward-position)
-                (< close-forward-position open-forward-position))
-            (- close-forward-position open-backward-position)))))
+    (if (and open-backward-position close-forward-position)
+        (- close-forward-position open-backward-position))))
 
 (defun delete-between (start-string end-string)
   "Delete everything between the given start and end value from the current cursor"
