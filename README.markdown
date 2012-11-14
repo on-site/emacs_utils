@@ -103,7 +103,7 @@ Use the following key bindings to run your specs:
 If you want to change the name of the shell buffer used, use the
 `rspec-shell-name` global variable.  If you want to change the command
 used to run rspec, use the `rspec-command` global variable (which
-defaults to "cd [rails dir] && rspec %s", where %s is filled in with
+defaults to `"cd [rails dir] && rspec %s"`, where %s is filled in with
 the rspec file to run).  You can set these in your .emacs file:
 
     (setq rspec-shell-name "*my-specs*")
