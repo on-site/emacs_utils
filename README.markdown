@@ -83,22 +83,22 @@ sure those are loaded, otherwise this will break.
 
 There are 2 options in invoking this that can be combined for 4 ways
 of running rspec tests.  You can run either the entire file, or the
-current line you are on.  You can also run in the <code>*rspec*</code>
-buffer, creating it if it doesn't exist, using it if it does, or you
-can always create a new <code>*rspec*</code> buffer.
+current line you are on.  You can also run in the `*rspec*` buffer,
+creating it if it doesn't exist, using it if it does, or you can
+always create a new `*rspec*` buffer.
 
-When using the existing <code>*rspec*</code> buffer, the buffer will
-be created for the first time and set as the current buffer.  All
-other times, the buffer will merely be switched to.  If the buffer is
-visible, that window will be selected.  If the buffer is not visible,
-the buffer will be switched to from the current window.
+When using the existing `*rspec*` buffer, the buffer will be created
+for the first time and set as the current buffer.  All other times,
+the buffer will merely be switched to.  If the buffer is visible, that
+window will be selected.  If the buffer is not visible, the buffer
+will be switched to from the current window.
 
 Use the following key bindings to run your specs:
 
-* **C-c r f**: Run this file in the existing <code>*rspec*</code> buffer
-* **C-c r F**: Run this file in a new <code>*rspec*</code> buffer
-* **C-c r l**: Run this line in the existing <code>*rspec*</code> buffer
-* **C-c r L**: Run this line in a new <code>*rspec*</code> buffer
+* **C-c r f**: Run this file in the existing `*rspec*` buffer
+* **C-c r F**: Run this file in a new `*rspec*` buffer
+* **C-c r l**: Run this line in the existing `*rspec*` buffer
+* **C-c r L**: Run this line in a new `*rspec*` buffer
 
 # License
 
