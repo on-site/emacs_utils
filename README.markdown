@@ -36,7 +36,8 @@ Adds a simple function sh, which can be used via "M-x sh" to launch a
 new shell.  It differs from "M-x shell" by prompting you for which
 buffer you want to launch the shell in, and then creates the new
 buffer to launch the shell in (rather than opening an existing shell
-if one exists).
+if one exists).  There is also a non-interactive new-shell function
+which takes an argument for the name of the shell to create.
 
 ## rails-nav.el
 
@@ -73,6 +74,31 @@ default-rails-root global variable in your .emacs file:
 
 Note that you can tab complete for all possible values of the various
 types.
+
+## run-rspec.el
+
+Add the ability to run rspec tests directly from the file in a new
+shell buffer.  This relies on new-shell.el and rails-nav.el, so make
+sure those are loaded, otherwise this will break.
+
+There are 2 options in invoking this that can be combined for 4 ways
+of running rspec tests.  You can run either the entire file, or the
+current line you are on.  You can also run in the <code>*rspec*</code>
+buffer, creating it if it doesn't exist, using it if it does, or you
+can always create a new <code>*rspec*</code> buffer.
+
+When using the existing <code>*rspec*</code> buffer, the buffer will
+be created for the first time and set as the current buffer.  All
+other times, the buffer will merely be switched to.  If the buffer is
+visible, that window will be selected.  If the buffer is not visible,
+the buffer will be switched to from the current window.
+
+Use the following key bindings to run your specs:
+
+* **C-c r f**: Run this file in the existing <code>*rspec*</code> buffer
+* **C-c r F**: Run this file in a new <code>*rspec*</code> buffer
+* **C-c r l**: Run this line in the existing <code>*rspec*</code> buffer
+* **C-c r L**: Run this line in a new <code>*rspec*</code> buffer
 
 # License
 
