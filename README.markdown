@@ -36,7 +36,7 @@ Adds a simple function sh, which can be used via "M-x sh" to launch a
 new shell.  It differs from "M-x shell" by prompting you for which
 buffer you want to launch the shell in, and then creates the new
 buffer to launch the shell in (rather than opening an existing shell
-if one exists).  There is also a non-interactive new-shell function
+if one exists).  There is also a non-interactive `new-shell` function
 which takes an argument for the name of the shell to create.
 
 ## rails-nav.el
@@ -68,7 +68,7 @@ Use the following bindings to jump to the corresponding type:
 * **C-x j v**: Views
 
 If you want to specify a default rails root directory, do so with the
-default-rails-root global variable in your .emacs file:
+`default-rails-root` global variable in your .emacs file:
 
     (setq default-rails-root "~/path/to/my/rails/root")
 
@@ -99,6 +99,15 @@ Use the following key bindings to run your specs:
 * **C-c r F**: Run this file in a new `*rspec*` buffer
 * **C-c r l**: Run this line in the existing `*rspec*` buffer
 * **C-c r L**: Run this line in a new `*rspec*` buffer
+
+If you want to change the name of the shell buffer used, use the
+`rspec-shell-name` global variable.  If you want to change the command
+used to run rspec, use the `rspec-command` global variable (which
+defaults to "cd [rails dir] && rspec %s", where %s is filled in with
+the rspec file to run).  You can set these in your .emacs file:
+
+    (setq rspec-shell-name "*my-specs*")
+    (setq rspec-command (concat "cd " (get-rails-root) " && /path/to/rspec %s"))
 
 # License
 
