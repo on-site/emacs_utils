@@ -1,5 +1,6 @@
 (unless (boundp 'keyboard-mappings-hash)
   (setq keyboard-mappings-hash (make-hash-table :test 'equal))
+  (setq keyboard-mappings-help-hash (make-hash-table :test 'equal))
   (setq keyboard-on-load-hash (make-hash-table :test 'equal))
   (setq keyboard-on-unload-hash (make-hash-table :test 'equal))
   (puthash "default" (make-hash-table :test 'equal) keyboard-mappings-hash)
@@ -15,13 +16,14 @@
 (defun define-keyboard-mappings (name mapping-groups &optional on-load on-unload)
   "Redefine a set of keyboard mapping-groups with the given name and mapping-groups and optional on-load and on-unload"
   (puthash name (make-hash-table :test 'equal) keyboard-mappings-hash)
+  (puthash name () keyboard-mappings-help-hash)
   (add-keyboard-mappings name mapping-groups)
   (puthash name on-load keyboard-on-load-hash)
   (puthash name on-unload keyboard-on-unload-hash))
 
 (defun add-keyboard-mappings (name mapping-groups)
   "Add additional keyboard mapping groups for a given name"
-  (while (< 0 (length mapping-groups))
+  (while mapping-groups
     (add-keyboard-mapping-group name (car mapping-groups))
     (setq mapping-groups (cdr mapping-groups))))
 
@@ -29,7 +31,9 @@
   "Add a mapping group for the given name"
   (let* ((group-name (car mapping-group))
          (mappings (cdr mapping-group)))
-    (while (< 0 (length mappings))
+    (puthash name (cons mapping-group (gethash name keyboard-mappings-help-hash))
+             keyboard-mappings-help-hash)
+    (while mappings
       (let* ((mapping (car mappings))
              (code (car mapping))
              (fn (cadr mapping))
@@ -98,8 +102,56 @@
   (setq primary-keyboard-mapping name)
   (set-keyboard-mapping name))
 
+(defun describe-keyboard-mappings ()
+  "Describe custom-keyboard-minor-mode"
+  (interactive)
+  (let* ((new-buffer-name (format "*kbd-%s help*" current-keyboard-mapping))
+         (new-buffer (generate-new-buffer new-buffer-name)))
+    (set-window-buffer (selected-window) new-buffer)
+    (set-buffer new-buffer)
+    (insert (concat "Key Mappings for '" current-keyboard-mapping "'\n"))
+    (insert "==================================================\n")
+    (insert-mapping-help (gethash current-keyboard-mapping keyboard-mappings-help-hash))
+    (beginning-of-buffer)))
+
+(defun insert-mapping-help (help)
+  "Insert the given help recursively to the current buffer"
+  (if help
+      (let* ((current (car help))
+             (remaining (cdr help))
+             (title (car current))
+             (mappings (cdr current))
+             (max-length (max-code-length mappings)))
+        (insert-mapping-help remaining)
+        (insert (concat "\n" title "\n"))
+        (insert "--------------------------------------------------\n")
+        (while mappings
+          (let* ((mapping (car mappings))
+                 (code (car mapping))
+                 (fn (cadr mapping))
+                 (space-filler (make-string (- max-length (length code)) ?\ )))
+            (insert (format "%s%s  =>  %s\n" code space-filler fn)))
+          (setq mappings (cdr mappings))))))
+
+(defun max-code-length (mappings)
+  "Get the max code length for the given mapping group"
+  (if mappings
+      (let* ((current (length (caar mappings)))
+             (remaining (max-code-length (cdr mappings))))
+        (max current remaining))
+    0))
+
 (global-unset-key [f11])
 (global-set-key [f11] 'set-keyboard-mapping)
 
 (global-unset-key [f12])
 (global-set-key [f12] 'toggle-keyboard-mapping)
+
+(global-unset-key [f1 f11])
+(global-unset-key [f1 f12])
+(global-unset-key (kbd "C-h <f11>"))
+(global-unset-key (kbd "C-h <f12>"))
+(global-set-key [f1 f11] 'describe-keyboard-mappings)
+(global-set-key [f1 f12] 'describe-keyboard-mappings)
+(global-set-key (kbd "C-h <f11>") 'describe-keyboard-mappings)
+(global-set-key (kbd "C-h <f12>") 'describe-keyboard-mappings)
