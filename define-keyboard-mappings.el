@@ -1,0 +1,17 @@
+(setq keyboard-mappings-hash (make-hash-table :test 'equal))
+(puthash "DEFAULT_BINDINGS" (make-hash-table :test 'equal) keyboard-mappings-hash)
+
+(defun define-keyboard-mappings (name mappings)
+  "Redefine a set of keyboard mappings with the given name and mappings"
+  (let* ((defaults (gethash "DEFAULT_BINDINGS" keyboard-mappings-hash))
+         (new-mapping (make-hash-table :test 'equal)))
+    (puthash name new-mapping keyboard-mappings-hash)
+    (while (< 0 (length mappings))
+      (let* ((mapping (car mappings))
+             (code (car mapping))
+             (fn (cadr mapping))
+             (kbdcode (read-kbd-macro code)))
+        (unless (gethash kbdcode defaults)
+          (puthash kbdcode (global-key-binding kbdcode) defaults))
+        (puthash kbdcode fn new-mapping))
+      (setq mappings (cdr mappings)))))
