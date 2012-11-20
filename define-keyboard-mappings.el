@@ -12,29 +12,29 @@
     :keymap keyboard-mappings-keymap)
   (custom-keyboard-minor-mode 1))
 
-(defun define-keyboard-mappings (name mappings &optional on-load on-unload)
-  "Redefine a set of keyboard mappings with the given name and mappings and optional on-load and on-unload"
-  (let* ((new-mapping (make-hash-table :test 'equal)))
-    (puthash name new-mapping keyboard-mappings-hash)
-    (while (< 0 (length mappings))
-      (let* ((mapping (car mappings))
-             (code (car mapping))
-             (fn (cadr mapping))
-             (kbdcode (read-kbd-macro code)))
-        (puthash kbdcode fn new-mapping))
-      (setq mappings (cdr mappings)))
-    (puthash name on-load keyboard-on-load-hash)
-    (puthash name on-unload keyboard-on-unload-hash)))
+(defun define-keyboard-mappings (name mapping-groups &optional on-load on-unload)
+  "Redefine a set of keyboard mapping-groups with the given name and mapping-groups and optional on-load and on-unload"
+  (puthash name (make-hash-table :test 'equal) keyboard-mappings-hash)
+  (add-keyboard-mappings name mapping-groups)
+  (puthash name on-load keyboard-on-load-hash)
+  (puthash name on-unload keyboard-on-unload-hash))
 
-(defun add-keyboard-mappings (name mappings)
-  "Add additional keyboard mappings for a given name"
-  (let* ((existing-mapping (gethash name keyboard-mappings-hash)))
+(defun add-keyboard-mappings (name mapping-groups)
+  "Add additional keyboard mapping groups for a given name"
+  (while (< 0 (length mapping-groups))
+    (add-keyboard-mapping-group name (car mapping-groups))
+    (setq mapping-groups (cdr mapping-groups))))
+
+(defun add-keyboard-mapping-group (name mapping-group)
+  "Add a mapping group for the given name"
+  (let* ((group-name (car mapping-group))
+         (mappings (cdr mapping-group)))
     (while (< 0 (length mappings))
       (let* ((mapping (car mappings))
              (code (car mapping))
              (fn (cadr mapping))
              (kbdcode (read-kbd-macro code)))
-        (puthash kbdcode fn existing-mapping))
+        (puthash kbdcode fn (gethash name keyboard-mappings-hash)))
       (setq mappings (cdr mappings)))))
 
 (defun change-keyboard-mapping (name)
