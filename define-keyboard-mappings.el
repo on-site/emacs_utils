@@ -1,10 +1,12 @@
 (unless (boundp 'keyboard-mappings-hash)
   (setq keyboard-mappings-hash (make-hash-table :test 'equal))
+  (setq keyboard-on-load-hash (make-hash-table :test 'equal))
+  (setq keyboard-on-unload-hash (make-hash-table :test 'equal))
   (puthash "default" (make-hash-table :test 'equal) keyboard-mappings-hash)
   (setq current-keyboard-mapping "default"))
 
-(defun define-keyboard-mappings (name mappings)
-  "Redefine a set of keyboard mappings with the given name and mappings"
+(defun define-keyboard-mappings (name mappings &optional on-load on-unload)
+  "Redefine a set of keyboard mappings with the given name and mappings and optional on-load and on-unload"
   (let* ((defaults (gethash "default" keyboard-mappings-hash))
          (new-mapping (make-hash-table :test 'equal)))
     (puthash name new-mapping keyboard-mappings-hash)
@@ -16,7 +18,9 @@
         (unless (gethash kbdcode defaults)
           (puthash kbdcode (global-key-binding kbdcode) defaults))
         (puthash kbdcode fn new-mapping))
-      (setq mappings (cdr mappings)))))
+      (setq mappings (cdr mappings)))
+    (puthash name on-load keyboard-on-load-hash)
+    (puthash name on-unload keyboard-on-unload-hash)))
 
 (defun change-keyboard-mapping (name)
   "Change which keyboard mapping is in use"
@@ -29,12 +33,17 @@
 
 (defun bind-keyboard-mapping (name)
   "Bind all the mappings in the given name"
-  (let* ((mappings (gethash name keyboard-mappings-hash)))
+  (let* ((mappings (gethash name keyboard-mappings-hash))
+         (on-load-fn (gethash name keyboard-on-load-hash))
+         (on-unload-fn (gethash name keyboard-on-unload-hash)))
+    (if on-load-fn (funcall on-load-fn))
     (maphash (lambda (code fn)
                (global-unset-key code)
-               (global-set-key code fn)) mappings)
+               (if fn (global-set-key code fn)))
+             mappings)
     (setq current-keyboard-mapping name)
-    (message (concat "Keyboard mapping set to '" name "'"))))
+    (message (concat "Keyboard mapping set to '" name "'"))
+    (if on-unload-fn (funcall on-unload-fn))))
 
 (defun get-keyboard-mapping-names ()
   "Retrieve a list of all keyboard mapping names"
