@@ -26,6 +26,17 @@
     (puthash name on-load keyboard-on-load-hash)
     (puthash name on-unload keyboard-on-unload-hash)))
 
+(defun add-keyboard-mappings (name mappings)
+  "Add additional keyboard mappings for a given name"
+  (let* ((existing-mapping (gethash name keyboard-mappings-hash)))
+    (while (< 0 (length mappings))
+      (let* ((mapping (car mappings))
+             (code (car mapping))
+             (fn (cadr mapping))
+             (kbdcode (read-kbd-macro code)))
+        (puthash kbdcode fn existing-mapping))
+      (setq mappings (cdr mappings)))))
+
 (defun change-keyboard-mapping (name)
   "Change which keyboard mapping is in use"
   (reset-keyboard-mapping)
