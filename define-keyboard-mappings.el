@@ -78,24 +78,27 @@
                (setq result (cons name result))) keyboard-mappings-hash)
     result))
 
-(defun set-keyboard-mapping (&optional name)
-  "Set the keyboard mapping to the given name, or prompt for the name"
-  (interactive)
-  (let* ((mapping-name (if name
-                           name
-                         (completing-read "Use keyboard mapping: " (get-keyboard-mapping-names)))))
-    (if (gethash mapping-name keyboard-mappings-hash)
-        (change-keyboard-mapping mapping-name)
-      (message (concat "'" mapping-name "' is not a valid keyboard mappings name... define it with define-keyboard-mappings")))))
+(defun set-keyboard-mapping (name)
+  "Set the keyboard mapping to the given name"
+  (if (gethash name keyboard-mappings-hash)
+      (change-keyboard-mapping name)
+    (message (concat "'" name "' is not a valid keyboard mappings name... define it with define-keyboard-mappings"))))
 
 (defun toggle-keyboard-mapping ()
-  "Toggle the keyboard mapping between the default and the user defined primary mapping"
+  "Change the keyboard mapping to the user entered mapping, defaulting to toggling between default and the user's primary mapping"
   (interactive)
-  (if (boundp 'primary-keyboard-mapping)
-      (if (equal "default" current-keyboard-mapping)
-          (set-keyboard-mapping primary-keyboard-mapping)
-        (set-keyboard-mapping "default"))
-    (message "Please define your primary mapping with '(set-default-keyboard-mapping \"my_mapping\")'")))
+  (let* ((primary-name (if (boundp 'primary-keyboard-mapping)
+                           primary-keyboard-mapping
+                         "default"))
+         (default-name (if (equal "default" current-keyboard-mapping)
+                           primary-name
+                         "default"))
+         (given-name (completing-read
+                      (format "Use keyboard mapping (default %s): " default-name)
+                      (get-keyboard-mapping-names)))
+         (is-empty (= 0 (length given-name)))
+         (name (if is-empty default-name given-name)))
+    (set-keyboard-mapping name)))
 
 (defun set-default-keyboard-mapping (name)
   "Set the default keyboard mapping to the given name and sets the mapping to that"
@@ -141,17 +144,10 @@
         (max current remaining))
     0))
 
-(global-unset-key [f11])
-(global-set-key [f11] 'set-keyboard-mapping)
-
 (global-unset-key [f12])
 (global-set-key [f12] 'toggle-keyboard-mapping)
 
-(global-unset-key [f1 f11])
 (global-unset-key [f1 f12])
-(global-unset-key (kbd "C-h <f11>"))
 (global-unset-key (kbd "C-h <f12>"))
-(global-set-key [f1 f11] 'describe-keyboard-mappings)
 (global-set-key [f1 f12] 'describe-keyboard-mappings)
-(global-set-key (kbd "C-h <f11>") 'describe-keyboard-mappings)
 (global-set-key (kbd "C-h <f12>") 'describe-keyboard-mappings)
