@@ -3,20 +3,24 @@
   (setq keyboard-on-load-hash (make-hash-table :test 'equal))
   (setq keyboard-on-unload-hash (make-hash-table :test 'equal))
   (puthash "default" (make-hash-table :test 'equal) keyboard-mappings-hash)
-  (setq current-keyboard-mapping "default"))
+  (setq current-keyboard-mapping "default")
+  (setq keyboard-mappings-keymap (make-keymap))
+  (define-minor-mode custom-keyboard-minor-mode
+    "A minor mode with custom defined keyboard mappings."
+    t
+    :lighter (:eval (format " kbd-%s" current-keyboard-mapping))
+    :keymap keyboard-mappings-keymap)
+  (custom-keyboard-minor-mode 1))
 
 (defun define-keyboard-mappings (name mappings &optional on-load on-unload)
   "Redefine a set of keyboard mappings with the given name and mappings and optional on-load and on-unload"
-  (let* ((defaults (gethash "default" keyboard-mappings-hash))
-         (new-mapping (make-hash-table :test 'equal)))
+  (let* ((new-mapping (make-hash-table :test 'equal)))
     (puthash name new-mapping keyboard-mappings-hash)
     (while (< 0 (length mappings))
       (let* ((mapping (car mappings))
              (code (car mapping))
              (fn (cadr mapping))
              (kbdcode (read-kbd-macro code)))
-        (unless (gethash kbdcode defaults)
-          (puthash kbdcode (global-key-binding kbdcode) defaults))
         (puthash kbdcode fn new-mapping))
       (setq mappings (cdr mappings)))
     (puthash name on-load keyboard-on-load-hash)
@@ -33,15 +37,22 @@
 
 (defun bind-keyboard-mapping (name)
   "Bind all the mappings in the given name"
-  (let* ((mappings (gethash name keyboard-mappings-hash))
+  (let* ((old-mappings (gethash current-keyboard-mapping keyboard-mappings-hash))
+         (mappings (gethash name keyboard-mappings-hash))
          (on-load-fn (gethash name keyboard-on-load-hash))
          (on-unload-fn (gethash name keyboard-on-unload-hash)))
     (if on-load-fn (funcall on-load-fn))
+    ;; Clear the old mapping
     (maphash (lambda (code fn)
-               (global-unset-key code)
-               (if fn (global-set-key code fn)))
+               (define-key keyboard-mappings-keymap code nil))
+             old-mappings)
+    ;; Setup the new mapping
+    (maphash (lambda (code fn)
+               (define-key keyboard-mappings-keymap code fn))
              mappings)
+    ;; Set variables, message the user, etc
     (setq current-keyboard-mapping name)
+    (force-mode-line-update t)
     (message (concat "Keyboard mapping set to '" name "'"))
     (if on-unload-fn (funcall on-unload-fn))))
 
