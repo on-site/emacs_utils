@@ -55,21 +55,21 @@
   (let* ((old-mappings (gethash current-keyboard-mapping keyboard-mappings-hash))
          (mappings (gethash name keyboard-mappings-hash))
          (on-load-fn (gethash name keyboard-on-load-hash))
-         (on-unload-fn (gethash name keyboard-on-unload-hash)))
-    (if on-load-fn (funcall on-load-fn))
+         (on-unload-fn (gethash current-keyboard-mapping keyboard-on-unload-hash)))
     ;; Clear the old mapping
     (maphash (lambda (code fn)
                (define-key keyboard-mappings-keymap code nil))
              old-mappings)
+    (if on-unload-fn (funcall on-unload-fn))
     ;; Setup the new mapping
+    (if on-load-fn (funcall on-load-fn))
     (maphash (lambda (code fn)
                (define-key keyboard-mappings-keymap code fn))
              mappings)
     ;; Set variables, message the user, etc
     (setq current-keyboard-mapping name)
     (force-mode-line-update t)
-    (message (concat "Keyboard mapping set to '" name "'"))
-    (if on-unload-fn (funcall on-unload-fn))))
+    (message (concat "Keyboard mapping set to '" name "'"))))
 
 (defun get-keyboard-mapping-names ()
   "Retrieve a list of all keyboard mapping names"
