@@ -10,19 +10,32 @@
   (let* ((shell-name (read-string "New shell name: ")))
     (new-shell shell-name)))
 
-(defun my-shell-up (&optional arg)
-  (interactive "p")
-  (if (eobp)
-      (comint-previous-input arg)
-    (previous-line arg)))
+(defmacro shell-arrow-key (fn-if-at-end fn-if-normal arg)
+  "Extracted common logic from shell-up and shell-down"
+  `(if (and (eobp) (is-shell-mode))
+       (,fn-if-at-end ,arg)
+     (,fn-if-normal ,arg)))
 
-(defun my-shell-down (&optional arg)
-  (interactive "p")
-  (if (eobp)
-      (comint-next-input arg)
-    (next-line arg)))
+(defun is-shell-mode ()
+  "Determine if the current buffer is a shell mode buffer"
+  (eq (with-current-buffer (current-buffer) major-mode) 'shell-mode))
 
-(add-hook 'shell-mode-hook
-	  (lambda ()
-	    (define-key shell-mode-map (kbd "<up>") 'my-shell-up)
-	    (define-key shell-mode-map (kbd "<down>") 'my-shell-down)))
+(defun shell-up (&optional arg)
+  "Act like bash up arrow when at the end of a shell mode buffer"
+  (interactive "p")
+  (shell-arrow-key comint-previous-input previous-line arg))
+
+(defun shell-down (&optional arg)
+  "Act like bash down arrow when at the end of a shell mode buffer"
+  (interactive "p")
+  (shell-arrow-key comint-next-input next-line arg))
+
+(setq shell-up-down-keymap (make-keymap))
+
+(define-key shell-up-down-keymap (kbd "<up>") 'shell-up)
+(define-key shell-up-down-keymap (kbd "<down>") 'shell-down)
+
+(define-minor-mode shell-up-down-minor-mode
+  "A minor mode where up and down will act like bash when in shell mode"
+  :lighter " ^"
+  :keymap shell-up-down-keymap)
