@@ -193,6 +193,8 @@
   (let ((path-dir (file-name-as-directory path)))
     (or (file-exists-p (concat path-dir "script/rails"))
         (and (file-exists-p (concat path-dir "script/server"))
+             (file-directory-p (concat path-dir "app")))
+        (and (file-exists-p (concat path-dir "config/application.rb"))
              (file-directory-p (concat path-dir "app"))))))
 
 (defun has-parent-directory (testing against)
