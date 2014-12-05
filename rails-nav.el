@@ -71,7 +71,8 @@
                       (if (or (not max-depth) (> max-depth 0))
                           (recursive-directory-expand-files (file-name-as-directory (concat prefix x)) path-x (if max-depth (- max-depth 1))))
                     (concat prefix x)))))
-            (directory-files path-dir nil nil t))))
+            (if (file-exists-p path-dir)
+                (directory-files path-dir nil nil t)))))
 
 ;; Adapted from http://stackoverflow.com/questions/969067/name-of-this-function-in-built-in-emacs-lisp-library
 (defun flatten (x)
@@ -124,10 +125,18 @@
     (cond ((equal file-type "controller") (string-inside file-name (get-rails-path "app/controllers/") "_controller.rb"))
           ((equal file-type "helper") (string-inside file-name (get-rails-path "app/helpers/") "_helper.rb"))
           ((equal file-type "model") (string-inside file-name (get-rails-path "app/models/") ".rb"))
-          ((equal file-type "spec") (string-inside file-name (get-rails-path "spec/") "_spec.rb"))
-          ((equal file-type "test") (string-inside file-name (get-rails-path "test/") "_test.rb"))
+          ((equal file-type "spec") (get-rails-test-item file-name (get-rails-path "spec/") "_spec.rb"))
+          ((equal file-type "test") (get-rails-test-item file-name (get-rails-path "test/") "_test.rb"))
           ((equal file-type "view") (string-inside file-name (get-rails-path "app/views/") (concat "/" (file-name-nondirectory file-name))))
           (t "application"))))
+
+(defun get-rails-test-item (file-name before after)
+  "Get the item for a test type by checking for controller/helper/model/view tests"
+  (or (string-inside file-name (concat before "controllers/") (concat "_controller" after))
+      (string-inside file-name (concat before "helpers/") (concat "_helper" after))
+      (string-inside file-name (concat before "models/") after)
+      (string-inside file-name (concat before "views/") after)
+      "application"))
 
 (defun get-rails-action (&optional file-name-or-current)
   "Get the rails action from the given file name or current buffer file name, return with leading #"
